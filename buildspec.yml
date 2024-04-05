@@ -16,7 +16,7 @@ phases:
       - echo Build started on `date`
       - echo 'begin  build step'
       - ls
-      - grep "v5" app.py && echo "v5 is in app.py"
+      # - grep "v5" app.py && echo "v5 is in app.py"
       - echo Building the Docker image...
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
