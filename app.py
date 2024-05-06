@@ -83,9 +83,9 @@ def start_process(i:int, client):
         #                                 Data= json.dumps(new_dict),       
         #                                 PartitionKey=id
                                     #  )
-         # use filehose instead
+         # use filehose instead of kinesis 
         response= client.put_record(
-                DeliveryStreamName = "vehicle-lat-delivery-stream",
+                DeliveryStreamName = DeliveryStreamName,
                 Record = {'Data': json.dumps(new_dict)}
                 )
         
@@ -94,6 +94,7 @@ def start_process(i:int, client):
 
 if __name__=='__main__':
     # kdsname='d2b-capstone-kinesis-stream-name'
+    DeliveryStreamName="vehicle-lat-delivery-stream"
     region='us-east-1'
     i=0
     try:
@@ -110,18 +111,28 @@ if __name__=='__main__':
                                     aws_secret_access_key=aws_secret_access_key
                                     )
         print(f"{clientkinesis} client created")
-        # Create Firehose delivery stream
-        res= firehose_client.create_delivery_stream(
-                            DeliveryStreamName="vehicle-lat-delivery-stream",
-                            DeliveryStreamType= "DirectPut",
-                            # Specify configuration of the destination S3 bucket
-                            S3DestinationConfiguration = {
-                                "BucketARN": "arn:aws:s3:::vehicle-lat-staging",
-                                "RoleARN": "arn:aws:iam::533267024701:role/firehose_delivery_role"
-                            })
-        
-        
 
+        # Create Firehose delivery stream.
+        # check firt if the DeliveryStreamName desired already exist.
+        list_stream = firehose_client.list_delivery_streams()['DeliveryStreamNames']
+        
+        if DeliveryStreamName not in list_stream:
+            try:
+                print(f"Creating the DeliveryStreamName {DeliveryStreamName} ....")
+                res= firehose_client.create_delivery_stream(
+                                    DeliveryStreamName=DeliveryStreamName,
+                                    DeliveryStreamType= "DirectPut",
+                                    # Specify configuration of the destination S3 bucket
+                                S3DestinationConfiguration = {
+                                    "BucketARN": "arn:aws:s3:::vehicle-lat-staging",
+                                    "RoleARN": "arn:aws:iam::533267024701:role/firehose_delivery_role"
+                                })
+            except Exception as e:
+                print(f"Cannot Create the DeliveryStreamName {DeliveryStreamName} due to  error: ", e)
+        
+        print(f'{DeliveryStreamName} already exist')
+
+        # start the stream
         start_process(i,firehose_client)
 
         print("Done puting records")
