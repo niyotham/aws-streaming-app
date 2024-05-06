@@ -82,7 +82,8 @@ def start_process(i:int, client):
         #                                 StreamName=kdsname,
         #                                 Data= json.dumps(new_dict),       
         #                                 PartitionKey=id
-        #                                 )
+                                    #  )
+         # use filehose instead
         response= client.put_record(
                 DeliveryStreamName = "vehicle-lat-delivery-stream",
                 Record = {'Data': json.dumps(new_dict)}
