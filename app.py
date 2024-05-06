@@ -3,8 +3,14 @@ import boto3
 import csv
 import datetime
 import random
-import os
+import os, sys
 from datetime import timedelta
+from dotenv import dotenv_values, load_dotenv
+load_dotenv()
+sys.path.append("../")
+region_name= os.getenv('region_name')
+aws_access_key_id = os.getenv('aws_access_key_id') 
+aws_secret_access_key = os.getenv('aws_secret_access_key')
 
 
 def getlatlon():
@@ -32,7 +38,7 @@ def getstore():
 #@JsonPropertyOrder({"id", "vendorId", "pickupDate", "dropoffDate", "passengerCount", "pickupLongitude", "pickupLatitude", "dropoffLongitude", "dropoffLatitude", "storeAndFwdFlag", "gcDistance", 
 #"tripDuration", "googleDistance", "googleDuration"})
 
-def start_process(i:int):
+def start_process(i:int, client):
     while True:
         i=int(i)+1
         id='id' + str(random.randint(1665586, 8888888))
@@ -71,12 +77,53 @@ def start_process(i:int):
         new_dict["googleDistance"]=googleDistance
         new_dict["googleDuration"]=googleDuration
         
-        response=clientkinesis.put_record(StreamName=kdsname, Data=json.dumps(new_dict), PartitionKey=id)
+        
+        # response=client.put_record(
+        #                                 StreamName=kdsname,
+        #                                 Data= json.dumps(new_dict),       
+        #                                 PartitionKey=id
+        #                                 )
+        response= client.put_record(
+                DeliveryStreamName = "vehicle-lat-delivery-stream",
+                Record = {'Data': json.dumps(new_dict)}
+                )
+        
+     
         print("Total ingested:"+str(i) +",ReqID:"+ response['ResponseMetadata']['RequestId'] + ",HTTPStatusCode:"+ str(response['ResponseMetadata']['HTTPStatusCode']))
 
 if __name__=='__main__':
-    kdsname='d2b-capstone-kinesis-stream-name'
+    # kdsname='d2b-capstone-kinesis-stream-name'
     region='us-east-1'
     i=0
-    clientkinesis = boto3.client('kinesis',region_name=region, aws_access_key_id=os.environ['ACCESS_KEY'],aws_secret_access_key=os.environ['SECRET_KEY'])
-    start_process(i)
+    try:
+        firehose_client = boto3.client('firehose', 
+            aws_access_key_id=aws_access_key_id, 
+            aws_secret_access_key=aws_secret_access_key, 
+            region_name=region
+            )
+        print(f"{firehose_client} client created")
+
+        clientkinesis = boto3.client('kinesis',
+                                    region_name=region,
+                                    aws_access_key_id=aws_access_key_id,
+                                    aws_secret_access_key=aws_secret_access_key
+                                    )
+        print(f"{clientkinesis} client created")
+        # Create Firehose delivery stream
+        res= firehose_client.create_delivery_stream(
+                            DeliveryStreamName="vehicle-lat-delivery-stream",
+                            DeliveryStreamType= "DirectPut",
+                            # Specify configuration of the destination S3 bucket
+                            S3DestinationConfiguration = {
+                                "BucketARN": "arn:aws:s3:::vehicle-lat-staging",
+                                "RoleARN": "arn:aws:iam::533267024701:role/firehose_delivery_role"
+                            })
+        
+        
+
+        start_process(i,firehose_client)
+
+        print("Done puting records")
+
+    except Exception as e:
+        print("Cannot load data due to  error: ", e)
