@@ -23,7 +23,8 @@ import pandas
 import os
 # Import the os module
 # Extract, transform and load dataraw_data = pd.read_csv("raw_stock_data.csv")
-stock_data = raw_data.loc[raw_data["open"] > 100, ["timestamps", "open"]]stock_data.to_csv("stock_data.csv")
+stock_data = raw_data.loc[raw_data["open"] > 100, ["timestamps", "open"]]
+stock_data.to_csv("stock_data.csv")
 # Check that the path exists
 file_exists = os.path.exists("stock_data.csv")
 print(file_exists)
