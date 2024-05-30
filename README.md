@@ -18,8 +18,7 @@ To do:
 ##Ensuring data persistence Was the DataFrame correctly stored to the CSV file?
 
 
-```
-python
+```python
 import pandas
 import os
 # Import the os module
