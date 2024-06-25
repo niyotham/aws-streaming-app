@@ -15,7 +15,8 @@ To do:
 3. python3.8 get-pip.py --user
 
 
-## Ensuring data persistence Was the DataFrame correctly stored to the CSV file?
+### Ensuring data persistence
+#### Was the DataFrame correctly stored to the CSV file?
 
 
 ```python
